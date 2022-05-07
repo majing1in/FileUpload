@@ -12,7 +12,7 @@ class FileUploadApplicationTests {
 
     @Test
     void contextLoads() {
-        File file1 = new File("E:\\ideaIU-2021.2.4.exe");
+        File file1 = new File("E:\\node-v16.14.2-x64.msi");
         System.out.println(file1.exists());
         System.out.println(file1.length());
         File file2 = new File("D:\\FileUpload\\root\\test\\01\\ideaIU-2021.2.4.exe");
