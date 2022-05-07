@@ -1,6 +1,8 @@
 package com.xiaoma.code.entity;
 
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.Date;
 
@@ -25,4 +27,9 @@ public class FileInfo {
     private Date createTime;
 
     private Date updateTime;
+
+    public FileInfo(String filePath, String fileName) {
+        this.filePath = filePath;
+        this.fileName = fileName;
+    }
 }

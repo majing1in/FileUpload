@@ -1,6 +1,8 @@
 package com.xiaoma.code.dao;
 
+import com.xiaoma.code.entity.FileInfo;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 /**
  * @Author: Xiaoma
@@ -9,4 +11,8 @@ import org.apache.ibatis.annotations.Mapper;
  */
 @Mapper
 public interface FileInfoDao {
+
+    void addFileInfo(FileInfo fileInfo);
+
+    void deleteFileInfo(@Param("filePath") String filePath, @Param("fileName") String fileName);
 }
