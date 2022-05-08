@@ -6,8 +6,10 @@ package com.xiaoma.code.constants;
  */
 public class Constant {
 
-    public static final int UPLOAD_TYPE_NORMAL = 0;
+    public static final Integer UPLOAD_TYPE_NORMAL = 0;
 
-    public static final int UPLOAD_TYPE_BLOCK = 1;
+    public static final Integer UPLOAD_TYPE_BLOCK = 1;
+
+    public static final String TEMP_FILE_PREFIX = "temp-";
 
 }

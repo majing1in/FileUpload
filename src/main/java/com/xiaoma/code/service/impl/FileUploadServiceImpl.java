@@ -1,22 +1,24 @@
 package com.xiaoma.code.service.impl;
 
+import com.xiaoma.code.async.AbstractFileMergeTask;
+import com.xiaoma.code.async.RandomFileMergeTask;
+import com.xiaoma.code.async.SequenceFileMergeTask;
+import com.xiaoma.code.async.FileMergeThreadPool;
 import com.xiaoma.code.constants.Constant;
-import com.xiaoma.code.dao.FileInfoDao;
 import com.xiaoma.code.entity.FileInfo;
 import com.xiaoma.code.exception.BizException;
 import com.xiaoma.code.service.FileUploadService;
 import com.xiaoma.code.utils.Assert;
+import com.xiaoma.code.utils.FileUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.annotation.Resource;
-import java.io.*;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.Collectors;
 
 import static com.xiaoma.code.enums.BizEnum.*;
 
@@ -32,29 +34,26 @@ public class FileUploadServiceImpl implements FileUploadService {
     @Value("${file.root.path}")
     private String fileRootPath;
 
-    @Resource
-    private FileInfoDao fileInfoDao;
-
     public Long saveUploadFile(Integer fileNumber, FileInfo fileInfo, MultipartFile multipartFile, Integer type) throws Exception {
-        StringBuilder filePath = new StringBuilder(fileRootPath)
-                .append(fileInfo.getFilePath().replace("/", File.separator));
-        File fileDirectory = new File(filePath.toString());
+        StringBuilder filePath = new StringBuilder(fileRootPath).append(FileUtil.updatePath(fileInfo.getFilePath()));
         final ReentrantLock mainLock = this.mainLock;
         mainLock.lock();
         File file;
         try {
+            File fileDirectory = new File(filePath.toString());
+            String fileName = fileInfo.getFileName();
             if (!fileDirectory.exists() && !fileDirectory.mkdirs()) {
                 throw new BizException(CREATE_DIRECTORY_EXCEPTION);
             }
-            if (type == Constant.UPLOAD_TYPE_BLOCK) {
-                filePath.append(File.separator).append("TEMP-").append(fileInfo.getFileName());
+            if (Objects.equals(type, Constant.UPLOAD_TYPE_BLOCK)) {
+                filePath.append(File.separator).append(Constant.TEMP_FILE_PREFIX).append(fileName);
                 fileDirectory = new File(filePath.toString());
                 if (!fileDirectory.exists() && !fileDirectory.mkdir()) {
                     throw new BizException(CREATE_TEMP_DIRECTORY_EXCEPTION);
                 }
-                fileInfo.setFileName(fileNumber.toString());
+                fileName = fileNumber.toString();
             }
-            String fileCompletePath = fileDirectory.getAbsolutePath() + File.separator + fileInfo.getFileName();
+            String fileCompletePath = fileDirectory.getAbsolutePath() + File.separator + fileName;
             file = new File(fileCompletePath);
             Assert.isTrue((!file.exists() || file.delete()), DELETE_DIRECTORY_EXCEPTION);
             Assert.isTrue(file.createNewFile(), CREATE_FILE_EXCEPTION);
@@ -71,41 +70,19 @@ public class FileUploadServiceImpl implements FileUploadService {
         return multipartFile.getSize();
     }
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
     @Override
-    public void mergeBlockFile(Integer chunks, FileInfo fileInfo) throws IOException {
-        String fileTempPath = fileRootPath + fileInfo.getFilePath().replace("/", File.separator) + File.separator + "TEMP-" + fileInfo.getFileName() + File.separator;
+    public void mergeBlockFile(Integer chunks, FileInfo fileInfo) {
+        String updatePath = FileUtil.updatePath(fileInfo.getFilePath());
+        String fileTempPath = fileRootPath + updatePath + File.separator +
+                Constant.TEMP_FILE_PREFIX + fileInfo.getFileName() + File.separator;
         File fileTemp = new File(fileTempPath);
         File[] files = fileTemp.listFiles();
-        if (files == null || chunks < files.length) {
+        if ((files == null || chunks > files.length - 1) || FileMergeThreadPool.getFuture(fileTempPath) || !fileTemp.exists()) {
             return;
         }
-        List<String> fileNames = Arrays.stream(files)
-                .map(File::getName).sorted(Comparator.comparingInt(Integer::parseInt)).collect(Collectors.toList());
-        FileInputStream first = new FileInputStream(fileNames.get(0));
-        FileInputStream second = new FileInputStream(fileNames.get(1));
-        SequenceInputStream inputStream = new SequenceInputStream(first, second);
-        for (int i = 2; i < fileNames.size(); i++) {
-            InputStream third = new FileInputStream(fileNames.get(i));
-            inputStream = new SequenceInputStream(inputStream, third);
-        }
-        String finalPath = fileRootPath + fileInfo.getFilePath().replace("/", File.separator) + File.separator + fileInfo.getFileName();
-        FileOutputStream outputStream = new FileOutputStream(finalPath);
-        try {
-            byte[] bytes = new byte[8196];
-            while (inputStream.read(bytes, 0, bytes.length) != -1) {
-                outputStream.write(bytes);
-                outputStream.flush();
-            }
-        } finally {
-            inputStream.close();
-            outputStream.close();
-        }
-        for (File file : files) {
-            if (file.exists()) {
-                file.delete();
-            }
-        }
-        fileTemp.delete();
+        AbstractFileMergeTask mergeTask = (files.length > 4) ?
+                new RandomFileMergeTask(fileInfo, fileTempPath, fileRootPath, fileTemp, files)
+                :new SequenceFileMergeTask(fileInfo, fileTempPath, fileRootPath, fileTemp, files);
+        FileMergeThreadPool.execute(mergeTask);
     }
 }

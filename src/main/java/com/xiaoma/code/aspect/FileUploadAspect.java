@@ -20,17 +20,12 @@ import java.util.Date;
 public class FileUploadAspect {
 
     @Pointcut("execution(* com.xiaoma.code.controller.FileUploadController..*(..))")
-    public void pointcut1() {
+    public void pointcut() {
 
     }
 
-    @Pointcut("execution(* com.xiaoma.code.dao.FileInfoDao..*(..))")
-    public void pointcut2() {
-
-    }
-
-    @Around("pointcut1()")
-    public Object process1(ProceedingJoinPoint proceedingJoinPoint) {
+    @Around("pointcut()")
+    public Object process(ProceedingJoinPoint proceedingJoinPoint) {
         try {
             return proceedingJoinPoint.proceed();
         } catch (BizException bizException) {
@@ -41,24 +36,4 @@ public class FileUploadAspect {
         return null;
     }
 
-    @Around("pointcut2()")
-    public Object process2(ProceedingJoinPoint proceedingJoinPoint) {
-        try {
-            Object[] args = proceedingJoinPoint.getArgs();
-            String methodName = proceedingJoinPoint.getSignature().getName();
-            for (Object arg : args) {
-                if (arg instanceof FileInfo) {
-                    FileInfo fileInfo = (FileInfo) arg;
-                    fileInfo.setUpdateTime(new Date());
-                    if ("addFileInfo".equals(methodName)) {
-                        fileInfo.setCreateTime(new Date());
-                    }
-                }
-            }
-            return proceedingJoinPoint.proceed();
-        } catch (Throwable throwable) {
-            throwable.printStackTrace();
-        }
-        return null;
-    }
 }
