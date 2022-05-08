@@ -1,9 +1,9 @@
 package com.xiaoma.code.service.impl;
 
 import com.xiaoma.code.async.AbstractFileMergeTask;
+import com.xiaoma.code.async.FileMergeThreadPool;
 import com.xiaoma.code.async.RandomFileMergeTask;
 import com.xiaoma.code.async.SequenceFileMergeTask;
-import com.xiaoma.code.async.FileMergeThreadPool;
 import com.xiaoma.code.constants.Constant;
 import com.xiaoma.code.entity.FileInfo;
 import com.xiaoma.code.exception.BizException;
@@ -34,6 +34,23 @@ public class FileUploadServiceImpl implements FileUploadService {
     @Value("${file.root.path}")
     private String fileRootPath;
 
+    @Override
+    public Long isExistFile(String path, String name, Integer type) {
+        StringBuilder filePath = new StringBuilder(fileRootPath).append(FileUtil.updatePath(path));
+        File fileDirectory = new File(filePath.toString());
+        if (!fileDirectory.exists()) {
+            return -1L;
+        }
+        if (Constant.UPLOAD_TYPE_BLOCK.equals(type)) {
+            StringBuilder tempFileDirectory = filePath.append(File.separator).append(Constant.TEMP_FILE_PREFIX).append(name);
+            return FileUtil.getDirectoryFileLength(tempFileDirectory.toString());
+        }
+        filePath.append(File.separator).append(name);
+        File file = new File(filePath.toString());
+        return file.length();
+    }
+
+    @Override
     public Long saveUploadFile(Integer fileNumber, FileInfo fileInfo, MultipartFile multipartFile, Integer type) throws Exception {
         StringBuilder filePath = new StringBuilder(fileRootPath).append(FileUtil.updatePath(fileInfo.getFilePath()));
         final ReentrantLock mainLock = this.mainLock;
@@ -51,11 +68,13 @@ public class FileUploadServiceImpl implements FileUploadService {
                 if (!fileDirectory.exists() && !fileDirectory.mkdir()) {
                     throw new BizException(CREATE_TEMP_DIRECTORY_EXCEPTION);
                 }
+                File[] files = fileDirectory.listFiles();
+                fileNumber = files != null ? files.length + fileNumber : fileNumber;
                 fileName = fileNumber.toString();
             }
-            String fileCompletePath = fileDirectory.getAbsolutePath() + File.separator + fileName;
-            file = new File(fileCompletePath);
-            Assert.isTrue((!file.exists() || file.delete()), DELETE_DIRECTORY_EXCEPTION);
+            filePath.append(File.separator).append(fileName);
+            file = new File(filePath.toString());
+            Assert.isTrue(!(file.exists() && file.delete()), DELETE_DIRECTORY_EXCEPTION);
             Assert.isTrue(file.createNewFile(), CREATE_FILE_EXCEPTION);
         } finally {
             mainLock.unlock();
@@ -82,7 +101,7 @@ public class FileUploadServiceImpl implements FileUploadService {
         }
         AbstractFileMergeTask mergeTask = (files.length > 4) ?
                 new RandomFileMergeTask(fileInfo, fileTempPath, fileRootPath, fileTemp, files)
-                :new SequenceFileMergeTask(fileInfo, fileTempPath, fileRootPath, fileTemp, files);
+                : new SequenceFileMergeTask(fileInfo, fileTempPath, fileRootPath, fileTemp, files);
         FileMergeThreadPool.execute(mergeTask);
     }
 }

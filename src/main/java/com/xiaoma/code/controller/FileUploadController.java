@@ -25,6 +25,14 @@ public class FileUploadController {
     @Resource
     private FileUploadService fileUploadService;
 
+    @PostMapping("/exist")
+    public ResultData<Long> isExistFile(@RequestParam("filePath") String filePath,
+                                        @RequestParam("fileName") String fileName,
+                                        @RequestParam("type") Integer type) {
+        Long length = fileUploadService.isExistFile(filePath, fileName, type);
+        return new ResultData<>(SUCCESS, length);
+    }
+
     @PostMapping("/normal")
     public ResultData<Long> normalFileUpload(@RequestParam("filePath") String filePath,
                                              @RequestParam("fileName") String fileName,

@@ -1,6 +1,7 @@
 package com.xiaoma.code.service;
 
 import com.xiaoma.code.entity.FileInfo;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -10,6 +11,8 @@ import java.io.IOException;
  * @Date 2022/5/7 10:22:04
  */
 public interface FileUploadService {
+
+    Long isExistFile(String filePath, String fileName, Integer type);
 
     /**
      * 保存上传文件
