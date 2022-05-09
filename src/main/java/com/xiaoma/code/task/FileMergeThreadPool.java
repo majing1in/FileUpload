@@ -17,8 +17,6 @@ public class FileMergeThreadPool {
 
     private static final Object LOCK_REMOVE_TASK = new Object();
 
-    private static final Object LOCK_EXECUTE_TASK = new Object();
-
     private static final ConcurrentHashMap<String, BlockFileTask> FILE_TASK_MAP = new ConcurrentHashMap<>(256);
 
     private static final ThreadPoolExecutor THREAD_POOL_EXECUTOR = new ThreadPoolExecutor(2, 4, 10, TimeUnit.MINUTES,
@@ -76,16 +74,14 @@ public class FileMergeThreadPool {
      * @param callable 任务
      */
     public static void execute(Callable<Boolean> callable) {
-        synchronized (LOCK_EXECUTE_TASK) {
-            AbstractFileMergeTask mergeTask = (AbstractFileMergeTask) callable;
-            String fileTempPath = mergeTask.getFileTempPath();
-            BlockFileTask blockFileTask = FILE_TASK_MAP.get(fileTempPath);
-            if (blockFileTask.getTaskFuture() != null && blockFileTask.getFileSteams().get() > 0) {
-                return;
-            }
-            Future<Boolean> future = THREAD_POOL_EXECUTOR.submit(mergeTask);
-            blockFileTask.setTaskFuture(future);
+        AbstractFileMergeTask mergeTask = (AbstractFileMergeTask) callable;
+        String fileTempPath = mergeTask.getFileTempPath();
+        BlockFileTask blockFileTask = FILE_TASK_MAP.get(fileTempPath);
+        if (blockFileTask.getTaskFuture() != null && blockFileTask.getFileSteams().get() > 0) {
+            return;
         }
+        Future<Boolean> future = THREAD_POOL_EXECUTOR.submit(mergeTask);
+        blockFileTask.setTaskFuture(future);
     }
 
     public static void removeTask() {

@@ -103,8 +103,7 @@ public class FileUploadServiceImpl implements FileUploadService {
     @Override
     public void mergeBlockFile(Integer chunks, FileInfo fileInfo) {
         String updatePath = FileUtil.updatePath(fileInfo.getFilePath());
-        String fileTempPath = fileRootPath + updatePath + File.separator
-                + Constant.TEMP_FILE_PREFIX + fileInfo.getFileName();
+        String fileTempPath = fileRootPath + updatePath + File.separator + Constant.TEMP_FILE_PREFIX + fileInfo.getFileName();
         File fileTemp = new File(fileTempPath);
         File[] files = fileTemp.listFiles();
         // 当文件块数达到目标数量才会获取结果，如果任务正确执行会删除文件
