@@ -38,7 +38,7 @@ public class RandomFileMergeTask extends AbstractFileMergeTask {
         File finalFile = new File(finalPath);
         finalFile.createNewFile();
         RandomAccessFile finalRandomAccessFile = new RandomAccessFile(finalFile, "rw");
-        byte[] bytes = new byte[8196];
+        byte[] bytes = new byte[1024];
         for (File file : files) {
             RandomAccessFile tempRandomAccessFile = new RandomAccessFile(file, "r");
             int len;

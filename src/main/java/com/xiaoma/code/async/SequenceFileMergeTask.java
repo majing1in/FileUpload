@@ -20,7 +20,6 @@ public class SequenceFileMergeTask extends AbstractFileMergeTask {
 
     @Override
     public Boolean call() throws Exception {
-        long startTime = System.currentTimeMillis();
         String updatePath = FileUtil.updatePath(this.getFileInfo().getFilePath());
         File[] files = this.getFiles();
         for (int i = 0; i < files.length - 1; i++) {
@@ -44,9 +43,10 @@ public class SequenceFileMergeTask extends AbstractFileMergeTask {
         String finalPath = this.getFileRootPath() + updatePath + File.separator + this.getFileInfo().getFileName();
         FileOutputStream outputStream = new FileOutputStream(finalPath);
         try {
-            byte[] bytes = new byte[8196];
-            while (inputStream.read(bytes, 0, bytes.length) != -1) {
-                outputStream.write(bytes);
+            byte[] bytes = new byte[1024];
+            int len;
+            while ((len = inputStream.read(bytes)) != -1) {
+                outputStream.write(bytes, 0, len);
                 outputStream.flush();
             }
         } finally {
@@ -58,8 +58,6 @@ public class SequenceFileMergeTask extends AbstractFileMergeTask {
                 file.delete();
             }
         }
-        boolean result = this.getFileTemp().delete();
-        System.out.println(System.currentTimeMillis() - startTime);
-        return result;
+        return this.getFileTemp().delete();
     }
 }

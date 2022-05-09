@@ -15,12 +15,12 @@ public class TestFileUploadThread {
 
     public static void main(String[] args) throws IOException {
         //源文件
-        File sourceFile = new File("E:\\AdobeAcrobatProDC_setup.rar");
+        File sourceFile = new File("E:\\VSCodeUserSetup-x64-1.62.3.exe");
         //块文件目录
         String chunkFileFolder = "D:\\FileUpload\\chunks\\";
 
         //先定义块文件大小
-        long chunkFileSize = 64 * 1024 * 1024;
+        long chunkFileSize = 8 * 1024 * 1024;
 
         //块数
         long chunkFileNum = (long) Math.ceil(sourceFile.length() * 1.0 / chunkFileSize);
@@ -57,12 +57,13 @@ public class TestFileUploadThread {
         int i1 = files.length - 1;
         for (File fileTemp : files) {
             new Thread(() -> {
+                System.out.println(fileTemp.length());
                 HashMap<String, Object> hashMap = new HashMap<>();
                 hashMap.put("chunks", i1);
                 hashMap.put("chunk", fileTemp.getName());
-                hashMap.put("filePath", "/Test/02");
+                hashMap.put("filePath", "/01");
                 hashMap.put("file", fileTemp);
-                hashMap.put("fileName", "AdobeAcrobatProDC_setup.rar");
+                hashMap.put("fileName", "1VSCodeUserSetup-x64-1.62.3.exe");
                 String post = HttpUtil.post("http://localhost:12345/api/upload/block", hashMap);
                 System.out.println(post);
             }).start();

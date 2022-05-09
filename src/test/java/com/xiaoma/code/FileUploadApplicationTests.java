@@ -100,7 +100,7 @@ class FileUploadApplicationTests {
     public void testMergeFile() throws IOException {
         long currentTimeMillis = System.currentTimeMillis();
         //块文件目录
-        String chunkFileFolderPath = "D:\\Code Warehouse\\FileUpload\\chunks\\";
+        String chunkFileFolderPath = "D:\\FileUpload\\chunks\\";
         //块文件目录对象
         File chunkFileFolder = new File(chunkFileFolderPath);
         //块文件列表
@@ -116,7 +116,7 @@ class FileUploadApplicationTests {
         });
 
         //合并文件
-        File mergeFile = new File("D:\\Code Warehouse\\FileUpload\\datas\\ideaIU-2021.2.2.exe");
+        File mergeFile = new File("D:\\FileUpload\\datas\\VSCodeUserSetup-x64-1.62.3.exe");
         //创建新文件
         boolean newFile = mergeFile.createNewFile();
 

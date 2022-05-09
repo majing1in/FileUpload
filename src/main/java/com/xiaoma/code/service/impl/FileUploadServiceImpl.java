@@ -87,9 +87,10 @@ public class FileUploadServiceImpl implements FileUploadService {
         // 写入数据
         try (FileOutputStream outputStream = new FileOutputStream(file);
              InputStream inputStream = multipartFile.getInputStream()) {
-            byte[] bytes = new byte[8196];
-            while (inputStream.read(bytes, 0, bytes.length) != -1) {
-                outputStream.write(bytes);
+            byte[] bytes = new byte[1024];
+            int len;
+            while ((len = inputStream.read(bytes)) != -1) {
+                outputStream.write(bytes, 0, len);
             }
         }
         return multipartFile.getSize();
@@ -102,6 +103,7 @@ public class FileUploadServiceImpl implements FileUploadService {
                 Constant.TEMP_FILE_PREFIX + fileInfo.getFileName() + File.separator;
         File fileTemp = new File(fileTempPath);
         File[] files = fileTemp.listFiles();
+        // 当文件块数达到目标数量才会获取结果，如果任务正确执行会删除文件
         if ((files == null || chunks > files.length - 1) || FileMergeThreadPool.getFuture(fileTempPath) || !fileTemp.exists()) {
             return;
         }
