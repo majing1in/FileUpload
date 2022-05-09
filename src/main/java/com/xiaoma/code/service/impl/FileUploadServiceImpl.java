@@ -59,26 +59,32 @@ public class FileUploadServiceImpl implements FileUploadService {
         try {
             File fileDirectory = new File(filePath.toString());
             String fileName = fileInfo.getFileName();
+            // 目录不存在则先创建目录
             if (!fileDirectory.exists() && !fileDirectory.mkdirs()) {
                 throw new BizException(CREATE_DIRECTORY_EXCEPTION);
             }
+            // 分块上传处理
             if (Objects.equals(type, Constant.UPLOAD_TYPE_BLOCK)) {
                 filePath.append(File.separator).append(Constant.TEMP_FILE_PREFIX).append(fileName);
                 fileDirectory = new File(filePath.toString());
+                // 创建分块临时目录
                 if (!fileDirectory.exists() && !fileDirectory.mkdir()) {
                     throw new BizException(CREATE_TEMP_DIRECTORY_EXCEPTION);
                 }
-                File[] files = fileDirectory.listFiles();
-                fileNumber = files != null ? files.length + fileNumber : fileNumber;
+                // 临时目录存在文件，编号继续向后递增
+                Integer size = FileMergeThreadPool.getTempFileCount(fileDirectory);
+                fileNumber = size != null ? size + fileNumber : fileNumber;
                 fileName = fileNumber.toString();
             }
             filePath.append(File.separator).append(fileName);
             file = new File(filePath.toString());
-            Assert.isTrue(!(file.exists() && file.delete()), DELETE_DIRECTORY_EXCEPTION);
+            Assert.isTrue(!file.exists(), HAS_SAME_FILE_EXCEPTION);
+            // 创建文件
             Assert.isTrue(file.createNewFile(), CREATE_FILE_EXCEPTION);
         } finally {
             mainLock.unlock();
         }
+        // 写入数据
         try (FileOutputStream outputStream = new FileOutputStream(file);
              InputStream inputStream = multipartFile.getInputStream()) {
             byte[] bytes = new byte[8196];
@@ -99,6 +105,7 @@ public class FileUploadServiceImpl implements FileUploadService {
         if ((files == null || chunks > files.length - 1) || FileMergeThreadPool.getFuture(fileTempPath) || !fileTemp.exists()) {
             return;
         }
+        // 异步执行两种合并方式
         AbstractFileMergeTask mergeTask = (files.length > 4) ?
                 new RandomFileMergeTask(fileInfo, fileTempPath, fileRootPath, fileTemp, files)
                 : new SequenceFileMergeTask(fileInfo, fileTempPath, fileRootPath, fileTemp, files);
