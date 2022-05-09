@@ -1,9 +1,9 @@
 package com.xiaoma.code.service.impl;
 
-import com.xiaoma.code.async.AbstractFileMergeTask;
-import com.xiaoma.code.async.FileMergeThreadPool;
-import com.xiaoma.code.async.RandomFileMergeTask;
-import com.xiaoma.code.async.SequenceFileMergeTask;
+import com.xiaoma.code.task.AbstractFileMergeTask;
+import com.xiaoma.code.task.FileMergeThreadPool;
+import com.xiaoma.code.task.RandomFileMergeTask;
+import com.xiaoma.code.task.SequenceFileMergeTask;
 import com.xiaoma.code.constants.Constant;
 import com.xiaoma.code.entity.FileInfo;
 import com.xiaoma.code.exception.BizException;
@@ -56,6 +56,7 @@ public class FileUploadServiceImpl implements FileUploadService {
         final ReentrantLock mainLock = this.mainLock;
         mainLock.lock();
         File file;
+        String fileDirectoryPath = null;
         try {
             File fileDirectory = new File(filePath.toString());
             String fileName = fileInfo.getFileName();
@@ -71,6 +72,7 @@ public class FileUploadServiceImpl implements FileUploadService {
                 if (!fileDirectory.exists() && !fileDirectory.mkdir()) {
                     throw new BizException(CREATE_TEMP_DIRECTORY_EXCEPTION);
                 }
+                fileDirectoryPath = fileDirectory.getAbsolutePath();
                 // 临时目录存在文件，编号继续向后递增
                 Integer size = FileMergeThreadPool.getTempFileCount(fileDirectory);
                 fileNumber = size != null ? size + fileNumber : fileNumber;
@@ -85,13 +87,15 @@ public class FileUploadServiceImpl implements FileUploadService {
             mainLock.unlock();
         }
         // 写入数据
-        try (FileOutputStream outputStream = new FileOutputStream(file);
-             InputStream inputStream = multipartFile.getInputStream()) {
+        try (FileOutputStream outputStream = new FileOutputStream(file); InputStream inputStream = multipartFile.getInputStream()) {
+            FileMergeThreadPool.addFileStream(fileDirectoryPath);
             byte[] bytes = new byte[1024];
             int len;
             while ((len = inputStream.read(bytes)) != -1) {
                 outputStream.write(bytes, 0, len);
             }
+        } finally {
+            FileMergeThreadPool.deleteFileStream(fileDirectoryPath);
         }
         return multipartFile.getSize();
     }
@@ -99,8 +103,8 @@ public class FileUploadServiceImpl implements FileUploadService {
     @Override
     public void mergeBlockFile(Integer chunks, FileInfo fileInfo) {
         String updatePath = FileUtil.updatePath(fileInfo.getFilePath());
-        String fileTempPath = fileRootPath + updatePath + File.separator +
-                Constant.TEMP_FILE_PREFIX + fileInfo.getFileName() + File.separator;
+        String fileTempPath = fileRootPath + updatePath + File.separator
+                + Constant.TEMP_FILE_PREFIX + fileInfo.getFileName();
         File fileTemp = new File(fileTempPath);
         File[] files = fileTemp.listFiles();
         // 当文件块数达到目标数量才会获取结果，如果任务正确执行会删除文件

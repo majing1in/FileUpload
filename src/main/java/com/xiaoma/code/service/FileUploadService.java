@@ -1,7 +1,6 @@
 package com.xiaoma.code.service;
 
 import com.xiaoma.code.entity.FileInfo;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;

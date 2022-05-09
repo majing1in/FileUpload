@@ -2,6 +2,7 @@ package com.xiaoma.code;
 
 import cn.hutool.http.HttpUtil;
 
+import com.xiaoma.code.constants.Constant;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -135,5 +136,31 @@ class FileUploadApplicationTests {
         }
         raf_write.close();
         System.out.println(System.currentTimeMillis() - currentTimeMillis);
+    }
+
+    @Test
+    void test2() {
+        File file = new File("D:\\FileUpload\\root");
+        findAllTempFiles(file);
+    }
+
+    public void findAllTempFiles(File file) {
+        File[] files = file.listFiles();
+        for (File value : files) {
+            if (!value.isDirectory()) {
+                continue;
+            }
+            if (value.getName().startsWith(Constant.TEMP_FILE_PREFIX)) {
+                File[] listFiles = value.listFiles();
+                for (File tempFile : listFiles) {
+                    if (tempFile.exists()) {
+                        tempFile.delete();
+                    }
+                }
+                value.delete();
+                return;
+            }
+            findAllTempFiles(value);
+        }
     }
 }
