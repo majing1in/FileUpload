@@ -1,4 +1,4 @@
-package com.xiaoma.code;
+package com.xiaoma.code.test;
 
 import cn.hutool.http.HttpUtil;
 
@@ -15,7 +15,7 @@ public class TestFileUploadThread {
 
     public static void main(String[] args) throws IOException {
         //源文件
-        File sourceFile = new File("E:\\VSCodeUserSetup-x64-1.62.3.exe");
+        File sourceFile = new File("E:\\考勤培训视频.rar");
         //块文件目录
         String chunkFileFolder = "D:\\FileUpload\\chunks\\";
 
@@ -63,7 +63,7 @@ public class TestFileUploadThread {
                 hashMap.put("chunk", fileTemp.getName());
                 hashMap.put("filePath", "/01");
                 hashMap.put("file", fileTemp);
-                hashMap.put("fileName", "1VSCodeUserSetup-x64-1.62.3.exe");
+                hashMap.put("fileName", "考勤培训视频.rar");
                 String post = HttpUtil.post("http://localhost:12345/api/upload/block", hashMap);
                 System.out.println(post);
             }).start();
