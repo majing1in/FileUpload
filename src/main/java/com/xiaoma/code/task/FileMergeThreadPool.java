@@ -45,14 +45,16 @@ public class FileMergeThreadPool {
     public static Integer getTempFileCount(File fileDirectory) {
         String absolutePath = fileDirectory.getAbsolutePath();
         BlockFileTask blockFileTask;
-        if ((blockFileTask = FILE_TASK_MAP.get(absolutePath)) == null) {
-            File[] files = fileDirectory.listFiles();
-            blockFileTask = new BlockFileTask();
-            blockFileTask.setCreateTime(new Date());
-            if (files != null) {
-                blockFileTask.setTempFileCount(files.length);
+        synchronized (LOCK_REMOVE_TASK) {
+            if ((blockFileTask = FILE_TASK_MAP.get(absolutePath)) == null) {
+                File[] files = fileDirectory.listFiles();
+                blockFileTask = new BlockFileTask();
+                blockFileTask.setCreateTime(new Date());
+                if (files != null) {
+                    blockFileTask.setTempFileCount(files.length);
+                }
+                FILE_TASK_MAP.put(absolutePath, blockFileTask);
             }
-            FILE_TASK_MAP.put(absolutePath, blockFileTask);
         }
         return blockFileTask.getTempFileCount();
     }
