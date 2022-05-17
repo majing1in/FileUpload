@@ -18,7 +18,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.Objects;
-import java.util.concurrent.locks.ReentrantLock;
 
 import static com.xiaoma.code.enums.BizEnum.*;
 
@@ -42,7 +41,7 @@ public class FileUploadServiceImpl implements FileUploadService {
             return -1L;
         }
         if (Constant.UPLOAD_TYPE_BLOCK.equals(type)) {
-            StringBuilder tempFileDirectory = filePath.append(File.separator).append(Constant.TEMP_FILE_PREFIX).append(name);
+            StringBuilder tempFileDirectory = filePath.append(File.separator).append(Constant.TEMP_FILE_PREFIX_1).append(name);
             return FileUtil.getDirectoryFileLength(tempFileDirectory.toString());
         }
         filePath.append(File.separator).append(name);
@@ -63,7 +62,7 @@ public class FileUploadServiceImpl implements FileUploadService {
         }
         // 分块上传处理
         if (Objects.equals(type, Constant.UPLOAD_TYPE_BLOCK)) {
-            filePath.append(File.separator).append(Constant.TEMP_FILE_PREFIX).append(fileName);
+            filePath.append(File.separator).append(Constant.TEMP_FILE_PREFIX_1).append(fileName);
             fileDirectory = new File(filePath.toString());
             // 创建分块临时目录
             if (!fileDirectory.exists() && !fileDirectory.mkdir()) {
@@ -83,7 +82,7 @@ public class FileUploadServiceImpl implements FileUploadService {
         // 写入数据
         try (FileOutputStream outputStream = new FileOutputStream(file); InputStream inputStream = multipartFile.getInputStream()) {
             FileMergeThreadPool.addFileStream(fileDirectoryPath);
-            byte[] bytes = new byte[1024];
+            byte[] bytes = new byte[8192];
             int len;
             while ((len = inputStream.read(bytes)) != -1) {
                 outputStream.write(bytes, 0, len);
@@ -97,7 +96,7 @@ public class FileUploadServiceImpl implements FileUploadService {
     @Override
     public void mergeBlockFile(Integer chunks, FileInfo fileInfo) {
         String updatePath = FileUtil.updatePath(fileInfo.getFilePath());
-        String fileTempPath = fileRootPath + updatePath + File.separator + Constant.TEMP_FILE_PREFIX + fileInfo.getFileName();
+        String fileTempPath = fileRootPath + updatePath + File.separator + Constant.TEMP_FILE_PREFIX_1 + fileInfo.getFileName();
         File fileTemp = new File(fileTempPath);
         File[] files = fileTemp.listFiles();
         // 当文件块数达到目标数量才会获取结果，如果任务正确执行会删除文件

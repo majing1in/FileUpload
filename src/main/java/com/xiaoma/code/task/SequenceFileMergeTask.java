@@ -22,17 +22,7 @@ public class SequenceFileMergeTask extends AbstractFileMergeTask {
     public Boolean call() throws Exception {
         String updatePath = FileUtil.updatePath(this.getFileInfo().getFilePath());
         File[] files = this.getFiles();
-        for (int i = 0; i < files.length - 1; i++) {
-            int i1 = Integer.parseInt(files[i].getName());
-            for (int j = i + 1; j < files.length; j++) {
-                int i2 = Integer.parseInt(files[j].getName());
-                if (i1 > i2) {
-                    File temp = files[i];
-                    files[i] = files[j];
-                    files[j] = temp;
-                }
-            }
-        }
+        FileUtil.sortTempFiles(files);
         FileInputStream first = new FileInputStream(files[0]);
         FileInputStream second = new FileInputStream(files[1]);
         SequenceInputStream inputStream = new SequenceInputStream(first, second);
@@ -43,7 +33,7 @@ public class SequenceFileMergeTask extends AbstractFileMergeTask {
         String finalPath = this.getFileRootPath() + updatePath + File.separator + this.getFileInfo().getFileName();
         FileOutputStream outputStream = new FileOutputStream(finalPath);
         try {
-            byte[] bytes = new byte[1024];
+            byte[] bytes = new byte[8192];
             int len;
             while ((len = inputStream.read(bytes)) != -1) {
                 outputStream.write(bytes, 0, len);
@@ -53,11 +43,7 @@ public class SequenceFileMergeTask extends AbstractFileMergeTask {
             inputStream.close();
             outputStream.close();
         }
-        for (File file : files) {
-            if (file.exists()) {
-                file.delete();
-            }
-        }
+        FileUtil.deleteFiles(files);
         return this.getFileTemp().delete();
     }
 }

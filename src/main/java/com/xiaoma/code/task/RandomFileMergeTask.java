@@ -23,22 +23,12 @@ public class RandomFileMergeTask extends AbstractFileMergeTask {
         long startTime = System.currentTimeMillis();
         String updatePath = FileUtil.updatePath(this.getFileInfo().getFilePath());
         File[] files = this.getFiles();
-        for (int i = 0; i < files.length - 1; i++) {
-            int i1 = Integer.parseInt(files[i].getName());
-            for (int j = i + 1; j < files.length; j++) {
-                int i2 = Integer.parseInt(files[j].getName());
-                if (i1 > i2) {
-                    File temp = files[i];
-                    files[i] = files[j];
-                    files[j] = temp;
-                }
-            }
-        }
+        FileUtil.sortTempFiles(files);
         String finalPath = this.getFileRootPath() + updatePath + File.separator + this.getFileInfo().getFileName();
         File finalFile = new File(finalPath);
         finalFile.createNewFile();
         RandomAccessFile finalRandomAccessFile = new RandomAccessFile(finalFile, "rw");
-        byte[] bytes = new byte[1024];
+        byte[] bytes = new byte[8192];
         for (File file : files) {
             RandomAccessFile tempRandomAccessFile = new RandomAccessFile(file, "r");
             int len;
@@ -48,11 +38,7 @@ public class RandomFileMergeTask extends AbstractFileMergeTask {
             tempRandomAccessFile.close();
         }
         finalRandomAccessFile.close();
-        for (File file : files) {
-            if (file.exists()) {
-                file.delete();
-            }
-        }
+        FileUtil.deleteFiles(files);
         boolean result = this.getFileTemp().delete();
         System.out.println(System.currentTimeMillis() - startTime);
         return result;

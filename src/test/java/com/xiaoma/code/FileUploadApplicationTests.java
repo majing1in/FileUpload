@@ -11,7 +11,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @SpringBootTest
 class FileUploadApplicationTests {
@@ -150,7 +149,7 @@ class FileUploadApplicationTests {
             if (!value.isDirectory()) {
                 continue;
             }
-            if (value.getName().startsWith(Constant.TEMP_FILE_PREFIX)) {
+            if (value.getName().startsWith(Constant.TEMP_FILE_PREFIX_1)) {
                 File[] listFiles = value.listFiles();
                 for (File tempFile : listFiles) {
                     if (tempFile.exists()) {
