@@ -26,7 +26,7 @@ public class FileUploadApplication implements CommandLineRunner {
     public void run(String... args) throws Exception {
         // 创建保存文件的根目录
         File file = new File(fileRootPath);
-        if (!file.exists() && !file.mkdir()) {
+        if (!file.exists() && !file.mkdirs()) {
             throw new BizException(BizEnum.ROOT_PATH_EXCEPTION);
         }
     }
